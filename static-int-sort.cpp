@@ -1,11 +1,12 @@
 /*
  *  Created by avlechen (c), 2017 
- *  
  *  MIT license, so do whatever you want.
+ *
  *  This code is based on one stackoverflow answer.
  *  I've lost a link to  the original post, so if you have one, please submit url.
+ * 
+ *  Here you may find an example of compile-time sorting of integer values
  */
-
 
 #include <iostream>
 

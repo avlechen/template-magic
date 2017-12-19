@@ -1,3 +1,12 @@
+/*
+ *  Created by avlechen (c), 2017
+ *  MIT license, so do whatever you want.
+ * 
+ *  This code implements sorting of types if some precedence order is defined
+ */
+
+// TODO use static-list.hpp for all service functions
+
 #include <iostream>
 #include <typeinfo>
 
