@@ -10,53 +10,20 @@
 #include <iostream>
 #include <typeinfo>
 
-using namespace std;
-
-template<typename... vs>
-struct Seq
-{}; 
-template<typename v1, typename...vs>
-struct Seq<v1, vs...>{
-};
-
-
-template<typename newT, typename srcT>
-struct PushFront{
-};
-template<typename vadded, typename...vs>
-struct PushFront<vadded, Seq<vs...> >{
-  typedef Seq<vadded, vs...> ResultType;
-};
-
-template<typename T>
-struct PopFront{
-};
-template<typename v1, typename...vs>
-struct PopFront<Seq<v1, vs...> >{
-  typedef Seq<vs...> RemaindType;
-  typedef v1    ResultType;
-};
-
-template<typename T1, typename T2>
-struct CatSeq{};
-template<typename...v, typename...us>
-struct CatSeq<Seq<v...>, Seq<us...> >{
-  typedef Seq< v..., us... >  ResultType;
-};
-
+#include "static-list.hpp"
 
 template<bool c, typename NewT, typename TrueClsT, typename FalseClsT>
 struct Classify{
 };
 template<typename NewT, typename TrueClsT, typename FalseClsT>
 struct Classify<true, NewT, TrueClsT, FalseClsT>{
-  typedef typename PushFront<NewT, TrueClsT>::ResultType NewTrueClsT;
+  typedef typename PushFront<NewT, TrueClsT>::Result NewTrueClsT;
   typedef FalseClsT  NewFalseClsT;
 };
 template<typename NewT, typename TrueClsT, typename FalseClsT>
 struct Classify<false, NewT, TrueClsT, FalseClsT>{
   typedef TrueClsT  NewTrueClsT;
-  typedef typename PushFront<NewT, FalseClsT>::ResultType NewFalseClsT;
+  typedef typename PushFront<NewT, FalseClsT>::Result NewFalseClsT;
 };
 
 template<typename T1, typename T2>
@@ -68,20 +35,20 @@ struct Less{
 template<typename Anchor, typename SeqT, typename RightSet, typename LeftSet>
 struct PartitionImpl{};
 template<typename Anchor, typename v1, typename RightSet, typename LeftSet>
-struct PartitionImpl<Anchor, Seq<v1>, RightSet, LeftSet>{
+struct PartitionImpl<Anchor, List<v1>, RightSet, LeftSet>{
   static const bool less=Less<v1, Anchor>::result;
   typedef typename Classify<less, v1, RightSet, LeftSet>::NewTrueClsT  RstRightSet;
   typedef typename Classify<less, v1, RightSet, LeftSet>::NewFalseClsT  RstLeftSet;  
 };
 
 template<typename RightSet, typename LeftSet, typename Anchor, typename v1, typename...vs>
-struct PartitionImpl<Anchor, Seq<v1, vs...>, RightSet, LeftSet>{
-  static const bool less=Less<typename PopFront<Seq<v1, vs...> >::ResultType, Anchor>::result;
+struct PartitionImpl<Anchor, List<v1, vs...>, RightSet, LeftSet>{
+  static const bool less=Less<typename PopFront<List<v1, vs...> >::Result, Anchor>::result;
   typedef typename Classify<less, v1, RightSet, LeftSet>::NewTrueClsT  TmpRstRightSet;
   typedef typename Classify<less, v1, RightSet, LeftSet>::NewFalseClsT  TmpRstLeftSet;
 
-  typedef typename PartitionImpl<Anchor, Seq<vs...>, TmpRstRightSet, TmpRstLeftSet>::RstRightSet RstRightSet;
-  typedef typename PartitionImpl<Anchor, Seq<vs...>, TmpRstRightSet, TmpRstLeftSet>::RstLeftSet  RstLeftSet;
+  typedef typename PartitionImpl<Anchor, List<vs...>, TmpRstRightSet, TmpRstLeftSet>::RstRightSet RstRightSet;
+  typedef typename PartitionImpl<Anchor, List<vs...>, TmpRstRightSet, TmpRstLeftSet>::RstLeftSet  RstLeftSet;
 };
 
 
@@ -89,74 +56,53 @@ template<typename T>
 struct Partition{
 };
 template<typename v1, typename v2, typename...vs>
-struct Partition<Seq<v1, v2, vs...> >{
+struct Partition<List<v1, v2, vs...> >{
   typedef v1 Anchor;
-  typedef Seq<> RightSet;
-  typedef Seq<> LeftSet;
-  typedef typename PartitionImpl<Anchor, Seq<v1, v2, vs...>, RightSet, LeftSet>::RstRightSet  RstRightSet;
-  typedef typename PartitionImpl<Anchor, Seq<v1, v2, vs...>, RightSet, LeftSet>::RstLeftSet   RstLeftSet;
+  typedef List<> RightSet;
+  typedef List<> LeftSet;
+  typedef typename PartitionImpl<Anchor, List<v1, v2, vs...>, RightSet, LeftSet>::RstRightSet  RstRightSet;
+  typedef typename PartitionImpl<Anchor, List<v1, v2, vs...>, RightSet, LeftSet>::RstLeftSet   RstLeftSet;
 };
 
 //why introduce this? refer to Sort
 template<typename SrcT, typename RightSet, typename LeftSet, template<typename > class SortOp>
 struct SortSub{  
-  typedef typename SortOp<RightSet>::ResultType  TmpRightSet2;
-  typedef typename SortOp<LeftSet>::ResultType   TmpLeftSet2;
+  typedef typename SortOp<RightSet>::Result  TmpRightSet2;
+  typedef typename SortOp<LeftSet>::Result   TmpLeftSet2;
 };
 template<typename SrcT, typename LeftSet, template<typename> class SortOp>
 struct SortSub<SrcT, SrcT, LeftSet, SortOp>{
   typedef SrcT  TmpRightSet2;
-  typedef typename SortOp<LeftSet>::ResultType   TmpLeftSet2;
+  typedef typename SortOp<LeftSet>::Result   TmpLeftSet2;
 };
 template<typename SrcT, typename RightSet, template<typename> class SortOp>
 struct SortSub<SrcT, RightSet, SrcT, SortOp>{
-  typedef typename SortOp<RightSet>::ResultType  TmpRightSet2;
+  typedef typename SortOp<RightSet>::Result  TmpRightSet2;
   typedef SrcT   TmpLeftSet2;
 };
 
 template<typename T>
 struct Sort;
 template<>
-struct Sort<Seq<> >{
-  typedef Seq<> ResultType;
+struct Sort<List<> >{
+  typedef List<> Result;
 };
 template<typename v1>
-struct Sort<Seq<v1>> {
-  typedef Seq<v1> ResultType;
+struct Sort<List<v1>> {
+  typedef List<v1> Result;
 };
 template<typename v1, typename...vs>
-struct Sort< Seq<v1, vs...> >{
-  typedef Seq<v1, vs...> SrcType;
-  typedef typename Partition< Seq<v1, vs...> >::RstRightSet TmpRightSet;
-  typedef typename Partition< Seq<v1, vs...> >::RstLeftSet TmpLeftSet;
+struct Sort< List<v1, vs...> >{
+  typedef List<v1, vs...> SrcType;
+  typedef typename Partition< List<v1, vs...> >::RstRightSet TmpRightSet;
+  typedef typename Partition< List<v1, vs...> >::RstLeftSet TmpLeftSet;
 
   //to by pass the case SrcType <==> TmpRightSet or  SrcType <==> TmpLeftSet
   typedef typename SortSub<SrcType, TmpRightSet, TmpLeftSet, Sort>::TmpRightSet2  TmpRightSet2;
   typedef typename SortSub<SrcType, TmpRightSet, TmpLeftSet, Sort>::TmpLeftSet2   TmpLeftSet2;
 
-  typedef typename CatSeq<TmpRightSet2, TmpLeftSet2>::ResultType ResultType;
+  typedef typename CatList<TmpRightSet2, TmpLeftSet2>::Result Result;
 };
-
-
-void dumpSeqTypeImpl(Seq<> ){
-}
-
-template<typename v1>
-void dumpSeqTypeImpl(v1& v ){
-  cout<<typeid(v).name() << " ";
-}
-
-template<typename v1, typename...vs>
-void dumpSeqTypeImpl(Seq<v1, vs...> ){
-  cout<<typeid(v1()).name () << " ";
-  dumpSeqTypeImpl( Seq<vs...>() );
-}
-template<typename...vs>
-void dumpSeqType(Seq<vs...> ){
-  cout<<"Seq type < ";
-  dumpSeqTypeImpl( Seq<vs...>() );
-  cout<<" >"<<endl;
-}
 
 // This is test case
 // It is f-ng huge and seems to be overkill
@@ -250,54 +196,55 @@ struct Less<E, D> {
 };
 
 // FIXME need to extract to separate 
-int main(){
+int main() {
+  using namespace std;
 {
-  typedef Seq<A> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<A> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
-  typedef Seq<B, A> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<B, A> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
   //
-  typedef Seq<B, B, A> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<B, B, A> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
-  typedef Seq<B, A, B > t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<B, A, B > t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
-  typedef Seq<B, B, B, B, B, A, B, B, B, B> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<B, B, B, B, B, A, B, B, B, B> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
-  typedef Seq<B, B, B, B, B, A> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<B, B, B, B, B, A> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
-  typedef Seq<E, E, E, D, D, C, B, B, B, A, A, A, A> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<E, E, E, D, D, C, B, B, B, A, A, A, A> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl;
 }
 {
-  typedef Seq<D, B, C, E, A, B, D, C> t;
-  dumpSeqType(t());
-  dumpSeqType(Sort<t>::ResultType());
+  typedef List<D, B, C, E, A, B, D, C> t;
+  dumpListType(t());
+  dumpListType(Sort<t>::Result());
   cout << endl; // this result is actuall incorrect
 }
 }

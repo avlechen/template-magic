@@ -9,7 +9,6 @@
  */
 
 #include <typeinfo>
-#include <limits>
 #include "static-list.hpp"
 
 // This may be seen as an edge in a directed graph.

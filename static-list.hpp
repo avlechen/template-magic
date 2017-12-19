@@ -7,19 +7,31 @@
  *
  *  This header specifies the List of types and following modificators:
  * 
- *  1. PushFront
- *  2. PopFront
- *  3. Erase
- *  4. IndexOf
- *  5. IsEmpty
+ *  1. CatList
+ *  2. PushFront
+ *  3. PopFront
+ *  4. Erase
+ *  5. EraseAt
+ *  6. IndexOf
+ *  7. IsEmpty
+ *
+ *  CatList concatenate two lists, the rest is self-explanatory.
  */
 #include <iostream>
+#include <limits>
 
 template<typename... vs>
 struct List
 {}; 
 template<typename v1, typename...vs>
 struct List<v1, vs...>{
+};
+
+template<typename T1, typename T2>
+struct CatList{};
+template<typename...v, typename...us>
+struct CatList<List<v...>, List<us...> >{
+  typedef List< v..., us... >  Result;
 };
 
 template<typename newT, typename srcT>
@@ -74,6 +86,24 @@ struct Erase<List<OtherNode, Nodes...>, Node>
     typedef typename PushFront<OtherNode, typename Erase<List<Nodes...>, Node>::Result>::Result Result;
 };
 
+template<size_t I, typename L>
+struct EraseAt;
+
+template<size_t I>
+struct EraseAt<I, List<> > {
+  typedef List<> Result;
+};
+
+template<size_t I, typename Head, typename... Tail>
+struct EraseAt<I, List<Head, Tail...>> {
+  typedef typename PushFront<Head, typename EraseAt<I-1, List<Tail...>>::Result>::Result Result;
+};
+
+template<typename Head, typename... Tail>
+struct EraseAt<0, List<Head, Tail...>> {
+  typedef List<Tail...> Result;
+};
+
 template <typename N, typename L>
 struct IndexOf {
 };
@@ -92,25 +122,6 @@ struct IndexOf<Node, List<> > {
 template <typename Node, typename... Tail>
 struct IndexOf<Node, List<Node, Tail...> > {
   static const size_t value = 0;
-};
-
-
-template<size_t I, typename L>
-struct EraseAt;
-
-template<size_t I>
-struct EraseAt<I, List<> > {
-  typedef List<> Result;
-};
-
-template<size_t I, typename Head, typename... Tail>
-struct EraseAt<I, List<Head, Tail...>> {
-  typedef typename PushFront<Head, typename EraseAt<I-1, List<Tail...>>::Result>::Result Result;
-};
-
-template<typename Head, typename... Tail>
-struct EraseAt<0, List<Head, Tail...>> {
-  typedef List<Tail...> Result;
 };
 
 template<typename T>
@@ -145,16 +156,3 @@ void dumpListType(List<vs...> ){
   dumpListTypeImpl( List<vs...>() );
   std::cout << " >" << std::endl;
 }
-
-// Check if multiple deletion 
-// template <class Node, typename... Nodes> // Erase from head
-// struct Erase<List<Node, Nodes...>, Node>
-// {
-//     typedef typename Erase<Nodes...>::Result Result;
-// };
-
-// template <class Node, class Head, class... Tail> // Search and erase from tail
-// struct Erase<List<Head, Tail...>, Node>
-// {
-//     typedef FlattenList<Head, typename Erase<Node, Tail...>::Result>::Result Result;
-// };
